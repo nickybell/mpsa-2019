@@ -50,7 +50,7 @@ dta <-
   select(TAW.Suffix:Zip, Worker.Group:Petitioner, NAICS:Determ.Code, Est..No..Workers)# 13599 obs.
 
 # There is one outlying petition from 2015 - not sure what is going on with that, so going to eliminate it
-table(format(dta$Determination.Date, "%Y"))
+# table(format(dta$Determination.Date, "%Y"))
 dta <- dta[dta$Determination.Date != "2005-07-18",] # 13598 obs.
 
 ## Drop PR, and VI; correct the "State" variable
@@ -390,3 +390,6 @@ dta_dens <-
   summarize(elig_workers = sum(Est..No..Workers, na.rm=T),
             industry_density = min(elig_workers/employees, 1)) %>%
   right_join(dta_cbp) # 13573 obs.
+
+# Save
+write.csv(dta_dens, "data/final/petitions.csv")
