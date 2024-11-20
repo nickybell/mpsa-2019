@@ -223,4 +223,10 @@ plot_coefficients(full.partic.industryfe,
                          "hispanic" = "% Hispanic or Latino",
                          "industry_density" = "% Workers in Industry Eligible for TAA",
                          "total_density" = "% All Workers Eligible for TAA"),
-                  dv_name = "TAA Participation Rate")
+                  dv_name = "TAA Participation Rate") +
+  theme(axis.text.y = element_text(size = 14),
+        plot.title = element_text(hjust = .5, size = 20)) +
+  ggtitle("Who Participates in TAA?")
+
+# Save
+ggsave(here::here("images/taa_participation_coefficients.png"))

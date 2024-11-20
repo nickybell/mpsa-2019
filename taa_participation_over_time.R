@@ -1,4 +1,4 @@
-# File Name: 	  	participation_rates.R
+# File Name: 	  	taa_participation_over_time.R
 # File Purpose: 	Viz of TAA participation over time
 # Author: 	    	Nicholas Bell (nicky.bell@gmail.com)
 
@@ -141,11 +141,12 @@ ggplot(data = national[-c(1:3),]) +
   labs(y = "Number of Workers",
        title = "TAA Eligible Workers, New Participants, and New Trainees, 2015-2019",
        caption = "Source: U.S. Department of Labor\nData by quarter; eligible workers is over previous three quarters (one quarter lag);\nnew participants and trainees is over previous four quarters (no lag)") +
-  theme_bw(base_size = 10) +
-  theme(plot.background = element_rect(fill = "transparent", color = NA),
-        panel.background = element_rect(fill = "transparent"),
-        panel.grid.major = element_line(color = "grey90"),
-        panel.grid.minor = element_line(color = "grey90"),
+  theme_classic(base_size = 10) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
         axis.title.x = element_blank(),
         plot.title = element_text(hjust=.5),
         plot.subtitle = element_text(hjust=.5))
+
+# Save
+ggsave(here::here("images/taa_participation_over_time.png"), width = 8, height = 4, units = "in")

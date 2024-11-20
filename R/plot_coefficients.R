@@ -111,10 +111,10 @@ plot_coefficients <- function(model, rename_covariates = NULL, covariate_order =
                   caption = paste0("Note: ", round((1-alpha)*100), "% confidence intervals."),
                   title = paste0("Regression of ", dv, " on Covariates")) +
     ggplot2::theme_minimal() +
-    ggplot2::theme(axis.title.y = ggplot2::element_blank(),
+    ggplot2::theme( axis.title.y = ggplot2::element_blank(),
                    legend.position = "none",
                    plot.title = ggplot2::element_text(hjust = .5),
-                   plot.background = ggplot2::element_rect(fill = "white"))
+                   plot.background = ggplot2::element_rect(fill = "white", color = "white"))
   
   plot
 }
