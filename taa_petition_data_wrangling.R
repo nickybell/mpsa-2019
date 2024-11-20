@@ -20,8 +20,8 @@ library(blsAPI)
 library(acs)
 
 # Set up parallel processing (for BLS API)
-options(parallelly.fork.enable = TRUE) # to fork in RStudio
-future::plan("multicore")
+# options(parallelly.fork.enable = TRUE) # to fork in RStudio
+future::plan("multisession")
 progressr::handlers(global = TRUE)
 
 # Petitions Data ----------------------------------------------------------
@@ -36,6 +36,8 @@ dta <-
   mutate(
     # Format determination date
     Determination.Date = as.Date(Determination.Date, format="%d-%b-%y"),
+    # Format ZIP codes
+    Zip = str_pad(Zip, 5, pad = "0"),
     # Create a variable for TAW+Suffix
     TAW.Suffix = paste0(trimws(TAW), trimws(Suffix)),
     # Remove commas from est. no. workers
@@ -194,7 +196,21 @@ geo_zips <-
 
 # Merge with petitions data
 dta_geo <- left_join(dta_naics, geo_zips, by = c("City" = "city", "State" = "state_id", "Zip" = "zip")) # 13573 obs.
-# sum(is.na(dta_geo$county_fips)) # 3395 non-matchers
+# sum(is.na(dta_geo$county_fips)) # 2182 non-matchers
+
+# Some of the petitions lack a zip code. So, if they have only ONE match in geo, we can use that for geocoding.
+geo_one <-
+  semi_join(geo,
+            geo %>%
+              count(city, state_id) %>%
+              filter(n == 1))
+
+dta_geo <- left_join(dta_geo, geo_one, by = c("City" = "city", "State" = "state_id"), suffix = c("", "_")) # 13573 obs.
+
+# Adopt the geocoded value if appropriate
+dta_geo <- mutate(dta_geo, county_fips = if_else(!is.na(county_fips_) & is.na(county_fips), as.character(county_fips_), county_fips),
+                  state_fips = if_else(!is.na(state_fips_) & is.na(state_fips), as.character(state_fips_), state_fips))
+# sum(is.na(dta_geo$county_fips)) # 662 non-matchers
 
 # I previously geocoded some unmatchable petitions using Texas A&M geocoder
 geo_tam <- purrr::map_dfr(c("field_site_corr_done.csv", "geo.tam2.csv"), read.csv)
@@ -207,7 +223,7 @@ dta_tam <- left_join(dta_geo, select(geo_tam, TAWSuffix, CensusCountyFips, Censu
 # Adopt the geocoded value if appropriate
 dta_tam <- mutate(dta_tam, county_fips = if_else(!is.na(CensusCountyFips) & is.na(county_fips), as.character(CensusCountyFips), county_fips),
                   state_fips = if_else(!is.na(CensusStateFips) & is.na(state_fips), as.character(CensusStateFips), state_fips))
-# sum(is.na(dta_tam$county_fips)) # 2997 non-matchers
+# sum(is.na(dta_tam$county_fips)) # 475 non-matchers
 
 # I previously manually geocoded some unmatchable petitions (keep in mind, only geocoding certified petitions)
 geo_man <- purrr::map_dfr(c("","2"), \(x) read.csv(paste0("field_site_unmatched", x, ".csv")))
@@ -218,7 +234,7 @@ dta_man <- left_join(dta_tam, select(geo_man, -City, -State), by = c("TAW.Suffix
 # Adopt the geocoded value if appropriate
 dta_man <- mutate(dta_man, county_fips = if_else(!is.na(County.FIPS) & is.na(county_fips), as.character(County.FIPS), county_fips),
                   state_fips = if_else(!is.na(State.FIPS) & is.na(state_fips), as.character(State.FIPS), state_fips))
-# sum(is.na(dta_man$county_fips)) # 2754 non-matchers
+# sum(is.na(dta_man$county_fips)) # 361 non-matchers
 
 # Also have to correct some state abbreviations
 for (i in dta_man$TAW.Suffix[which(dta_man$Correction == 1)]) {
@@ -252,7 +268,7 @@ bls_reg_key <- Sys.getenv("BLS_REG_KEY") # set in .Renviron
 series_list <- lapply(seq(1, length(unique(dta_man$bls_series)), by = 50), \(i) na.omit(unique(dta_man$bls_series)[i:(i+49)]))
 
 # Parallel calls to API
-get_bls <- FALSE
+get_bls <- TRUE
 if (get_bls) {
   progressr::with_progress({
     p <- progressr::progressor(steps = length(series_list))
@@ -275,7 +291,7 @@ if (get_bls) {
     })
   })
   # This can be a bit of a pain to re-run every time, so saving the output
-  write.csv(unempl, "unemployment_rates.csv")
+  write.csv(unempl, "unemployment_rates.csv", row.names = FALSE)
 } else {
   message("Skipping BLS API calls (using unemployment_rates.csv instead). Set `get_bls` to TRUE to use API.")
   unempl <- read.csv("unemployment_rates.csv")
@@ -290,7 +306,7 @@ dta_unempl <-
   select(bls_series, yearmon, Rate) %>%
   right_join(dta_man, by = c("bls_series", "yearmon")) # 13573 obs.
 
-# sum(is.na(dta_unempl$Rate)) #4273 either out of date range or missing FIPS
+# sum(is.na(dta_unempl$Rate)) #2186 either out of date range or missing FIPS
 
 #### American Community Survey ####
 
@@ -303,9 +319,8 @@ dta_unempl$acs_year <- if_else(year(dta_unempl$Determination.Date) <= 2008, 2009
 # Load ACS key
 api.key.install(Sys.getenv("ACS_KEY"))
 
-
 # Parallel calls to US Census Bureau API
-get_acs <- FALSE
+get_acs <- TRUE
 if (get_acs) {
   progressr::with_progress({
     p <- progressr::progressor(steps = length(2009:2016))
@@ -334,7 +349,7 @@ if (get_acs) {
       })
     })
   })
-  write.csv(acs, "acs.csv")
+  write.csv(acs, "acs.csv", row.names = FALSE)
 } else {
   message("Skipping ACS API calls (using acs.csv instead). Set `get_acs` to TRUE to use API.")
   acs <- read.csv("acs.csv", colClasses = c("county_fips" = "character", "state_fips" = "character"))
@@ -354,8 +369,10 @@ acs <-
     less_hs = B23006_005/(B23006_005+B23006_012+B23006_019+B23006_026),
     hs = B23006_012/(B23006_005+B23006_012+B23006_019+B23006_026),
     some_col = B23006_019/(B23006_005+B23006_012+B23006_019+B23006_026),
-    col = B23006_026/(B23006_005+B23006_012+B23006_019+B23006_026)) %>%
-  select(county_fips, state_fips, year:col) 
+    col = B23006_026/(B23006_005+B23006_012+B23006_019+B23006_026),
+    # Median Household Income in the Past 12 Months (inflation-adjusted for that year, i.e. March and August 2017, but not 2017 to 2016)
+    median_household_income = B19013_001) %>%
+  select(county_fips, state_fips, year:median_household_income) 
 
 # Merge
 dta_acs <- left_join(dta_unempl, acs, by = c("county_fips", "state_fips", "acs_year"= "year"))
@@ -376,7 +393,7 @@ cbp <-
 # Merge
 dta_cbp <- left_join(dta_acs, cbp, by = c("county_fips", "state_fips", "Combo.2.Digit.NAICS" = "CBP.2.Digit.NAICS")) # 13573 obs.
 
-# sum(is.na(dta_cbp$employees)) # 2780 missing (most missing FIPS codes)
+# sum(is.na(dta_cbp$employees)) # 390 missing (most missing FIPS codes)
 
 # Density of TAA-eligible workers - total and in industry
 dta_dens <- 
@@ -392,4 +409,4 @@ dta_dens <-
   right_join(dta_cbp) # 13573 obs.
 
 # Save
-write.csv(dta_dens, "data/final/petitions.csv")
+write.csv(dta_dens, "data/final/petitions.csv", row.names = FALSE)

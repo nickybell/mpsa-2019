@@ -43,4 +43,4 @@ pet <- read.csv("PetitionData31819.csv") %>%
 dol$partic_rate <- pmin(dol$partic_pet/dol$cert_wrkrs_pet, 1)
 
 # Save
-write.csv(dol, "data/final/partic.csv")
+write.csv(dol, "data/final/partic.csv", row.names = FALSE)
