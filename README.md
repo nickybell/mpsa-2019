@@ -4,6 +4,6 @@
 
 ![](images/taa_participation_over_time.png)
 <br><br>
-<center>
-<img src="images/taa_participation_coefficients.png" width = "300px">
-</center>
+<p align="center" width="100%">
+<img width="50%" src="images/taa_participation_coefficients.png">
+</p>
