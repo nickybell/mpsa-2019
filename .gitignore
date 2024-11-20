@@ -57,5 +57,4 @@ rsconnect/
 *.tex
 
 # personal use only
-originals/
-uscities.csv
+no_git/
