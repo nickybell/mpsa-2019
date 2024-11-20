@@ -51,6 +51,11 @@ rsconnect/
 # DS Store
 .DS_Store
 
-# temp
+# Rendered markdown and Quarto files
+*.pdf
+*.html
+*.tex
+
+# personal use only
 originals/
 uscities.csv
