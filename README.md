@@ -1,6 +1,6 @@
 # Participation in Trade Adjustment Assistance
 
-![](images/taa_participation_over_time.png)
+![](images/taa_participation_over_time.png?)
 
 * Each year, the United States spends nearly \$1 billion dollars on the Trade Adjustment Assistance (TAA) program, which provides free job training to workers who lose their job due to foreign trade.
 * In principle, this program should soften the cost of free trade in places like the Rust Belt by reallocating labor from the "old economy" to more globally competitive industries.
