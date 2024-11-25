@@ -5,7 +5,7 @@
 #### Initial commands ####
 
 # Are you here?
-here::i_am("taa_participation_data_wrangling.R")
+here::i_am("scripts/taa_participation_data_wrangling.R")
 
 # Set options
 options(tibble.width = Inf)
@@ -21,7 +21,7 @@ library(ggplot2)
 # Petition Data -----------------------------------------------------------
 
 # This data comes from the DOL website (more updated than data from FOIA request): https://www.dol.gov/agencies/eta/tradeact/data/petitions-determinations
-pets_raw <- read.csv(here::here("PetitionData_20210314.csv")) #85189 obs.
+pets_raw <- read.csv(here::here("data/original/dol/PetitionData_20210314.csv")) #85189 obs.
 
 pets <- 
   pets_raw %>%
@@ -57,7 +57,7 @@ US_by_Quarter$eligible_run_sum <-
 # Participation Data ------------------------------------------------------
 
 # Collate data from https://www.dol.gov/agencies/eta/tradeact/data/participants
-partic <- purrr::map_dfr(list.files(here::here("2021_participation_data/"), full.names = TRUE), \(x) {
+partic <- purrr::map_dfr(list.files(here::here("data/original/dol/2021_participation_data/"), full.names = TRUE), \(x) {
   suppressMessages(
     read_excel(x, .name_repair = "universal") %>%
       select(matches("...(1|2)$"), matches("State"), matches("TAA\\.*Participants\\.*New"), matches("Training\\.*Participants\\.*New")) %>%
@@ -134,7 +134,7 @@ ggplot(data = national[-c(1:3),]) +
   annotate("text",
            x = as.Date("2016-07-01"),
            y = 40000,
-           label = "\"Reversion 2014\"\nReconsideration Window",
+           label = "\"Reversion 2014\"\nReconsideration Window\n(retroactive approval of benefits\n under expanded eligibility)",
            size = 2.5) +
   scale_y_continuous(limits = c(0,130000), breaks = seq(0,125000,25000), labels = scales::comma) +
   scale_x_date(limits = c(as.Date("2014-10-01"),as.Date("2020-01-01")), date_breaks = "1 year", date_labels = "%Y") +
